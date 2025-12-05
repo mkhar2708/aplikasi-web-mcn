@@ -18,14 +18,18 @@ Pastikan di komputer Anda sudah terinstall **Node.js**.
 
 1. **Clone Repository**
    ```bash
-   git clone <URL_REPO_ANDA>
-   cd video-web
+   git clone https://github.com/mkhar2708/aplikasi-web-mcn.git
+   cd local-video-v0.1
    ```
 2. **Install Library**
-   `npm install`
+   ```bash
+   npm install
+   ````
 
 3. **Jalankan Aplikasi**
-   `npm run dev`
+   ```bash
+   npm start
+   ```
 
 4. **Buka di Browser**
    ```bash
@@ -36,19 +40,20 @@ Pastikan di komputer Anda sudah terinstall **Node.js**.
 
 ## 📂 Struktur Project
 
-`server.js` : Otak backend (Node.js & Express). Menangani upload & streaming.
-`public/` : Folder Frontend (HTML/CSS/JS).
-    - `assets/` : Menyimpan file style dan logic script.
-    - `videos/` : Tempat penyimpanan fisik file video.
-`data.json` : Database file ringan (NoSQL-like) untuk menyimpan metadata video.
+```server.js``` : Otak backend (Node.js & Express). Menangani upload & streaming.
+
+```public/``` : Folder Frontend (HTML/CSS/JS).
+- `assets/` : Menyimpan file style dan logic script.
+- `videos/` : Tempat penyimpanan fisik file video.
+```data.json``` : Database file ringan (NoSQL-like) untuk menyimpan metadata video.
 
 ## 📱 Cara Install di HP (PWA)
 Agar tampil full layar tanpa address bar browser:
-    1. Pastikan HP dan Laptop konek di satu Wi-Fi.
-    2. Matikan Firewall Laptop (Port 3003).
-    3. Buka IP Laptop di Chrome HP (Cth: 192.168.1.5:3003).
-    4. Klik menu Browser (Titik Tiga) -> Pilih "Add to Home Screen" atau "Install App".
-    5. Buka icon aplikasi baru di layar HP Anda.
+1. Pastikan HP dan Laptop konek di satu Wi-Fi.
+2. Matikan Firewall Laptop (Port 3003).
+3. Buka IP Laptop di Chrome HP (Cth: 192.168.1.5:3003).
+4. Klik menu Browser (Titik Tiga) -> Pilih "Add to Home Screen" atau "Install App".
+5. Buka icon aplikasi baru di layar HP Anda.
 
 ## 🛠 Teknologi
 Frontend: HTML5, CSS3, Vanilla JavaScript (Intersection Observer API).
@@ -56,4 +61,4 @@ Backend: Node.js, Express.
 Data & File: JSON Storage, Multer (File Upload).
 
 
-Created with ❤️ by [MyStream Preview](https://maskhar.it.com)
+Created with ❤️ by [Mas Kharisman DevOps](https://maskhar.it.com)
