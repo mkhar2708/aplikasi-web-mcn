@@ -3,7 +3,6 @@
 Malang City Network - Local Video Player adalah aplikasi streaming video lokal berbasis web yang berjalan di jaringan localhost (Wi-Fi). Aplikasi ini memungkinkan Anda mengupload, mengelola, dan menonton video dari berbagai perangkat (HP, Tablet, PC) dengan tampilan modern yang responsif.
 
 ![MyStream Preview](https://via.placeholder.com/800x400?text=MyStream+Preview)
-*(Ganti link di atas dengan screenshot aplikasimu nanti)*
 
 ## ✨ Fitur Utama
 
@@ -22,7 +21,7 @@ Pastikan di komputer Anda sudah terinstall **Node.js**.
    git clone <URL_REPO_ANDA>
    cd video-web
    ```
-2. **Install Library** \n
+2. **Install Library**
    `npm install`
 
 3. **Jalankan Aplikasi**
@@ -57,4 +56,4 @@ Backend: Node.js, Express.
 Data & File: JSON Storage, Multer (File Upload).
 
 
-Created with ❤️ by [Mas Kharisman]
+Created with ❤️ by [MyStream Preview](https://maskhar.it.com)
