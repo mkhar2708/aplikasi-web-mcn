@@ -22,7 +22,7 @@ Pastikan di komputer Anda sudah terinstall **Node.js**.
    git clone <URL_REPO_ANDA>
    cd video-web
    ```
-2. **Install Library**
+2. **Install Library** \n
    `npm install`
 
 3. **Jalankan Aplikasi**
