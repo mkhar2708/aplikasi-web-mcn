@@ -25,13 +25,17 @@ Pastikan di komputer Anda sudah terinstall **Node.js**.
    ```bash
    npm install
    ````
+3. **Tambahkan File dibawah ini**
+```bash
+data.json
+```
 
-3. **Jalankan Aplikasi**
+4. **Jalankan Aplikasi**
    ```bash
    npm start
    ```
 
-4. **Buka di Browser**
+5. **Buka di Browser**
    ```bash
    Lihat Terminal untuk mengetahui IP Address yang bisa diakses.
    Local: http://localhost:3003
