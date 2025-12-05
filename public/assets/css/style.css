@@ -1,0 +1,217 @@
+/* --- STYLE DASAR --- */
+body {
+    font-family: "Segoe UI", sans-serif;
+    background: #0f0f0f;
+    color: white;
+    margin: 0;
+    padding: 20px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.logo {
+    font-size: 24px;
+    font-weight: bold;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.btn-dash {
+    background: #cc0000;
+    color: white;
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 14px;
+    transition: 0.3s;
+}
+
+.btn-dash:hover {
+    background: #ff1111;
+}
+
+/* --- GRID SYSTEM (KUNCI LAYOUT 3x3) --- */
+.video-grid {
+    display: grid;
+    gap: 20px;
+    /* Default HP Posisi Berdiri (Portrait) -> 1 Kolom */
+    grid-template-columns: 1fr;
+}
+
+/* MEDIA QUERY: Untuk Tablet, PC, atau HP yang dimiringkan (Landscape) */
+/* Kita paksa jadi 3 Kolom sesuai permintaan */
+@media (min-width: 600px),
+(orientation: landscape) {
+    .video-grid {
+        grid-template-columns: repeat(3, 1fr);
+        /* TEPAT 3 Kolom */
+    }
+}
+
+/* Khusus layar SANGAT besar (TV 4K), boleh jadi 4 kolom */
+@media (min-width: 1400px) {
+    .video-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* --- STYLE KARTU VIDEO --- */
+.video-card {
+    background: #1e1e1e;
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.video-card:hover {
+    transform: scale(1.03);
+    z-index: 5;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.6);
+    border: 2px solid #444;
+}
+
+/* --- RASIO 16:9 (PREVIEW) --- */
+.video-wrapper {
+    position: relative;
+    width: 100%;
+    /* 
+               Rumus Aspect Ratio: (Tinggi / Lebar) * 100% 
+               16:9  -> 56.25%
+               19:6  -> 31.5% (Terlalu tipis)
+               Kita pakai 16:9 agar gambar jelas 
+            */
+    padding-top: 56.25%;
+    background: #000;
+}
+
+.video-wrapper video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* Memastikan video memenuhi kotak tanpa gepeng */
+    filter: brightness(0.9);
+    /* Sedikit gelap saat diam */
+    transition: filter 0.3s;
+}
+
+.video-card:hover .video-wrapper video {
+    filter: brightness(1.1);
+    /* Terang saat dihover */
+}
+
+.video-info {
+    padding: 12px;
+}
+
+.video-title {
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 5px;
+    line-height: 1.4;
+    color: #fff;
+    /* Batasi judul maks 2 baris */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.video-meta {
+    font-size: 0.8rem;
+    color: #aaa;
+    margin-top: 5px;
+}
+
+/* --- MODAL FULL SCREEN PLAYER --- */
+#videoModal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    backdrop-filter: blur(5px);
+}
+
+#fullPlayer {
+    width: 80%;
+    /* Lebar player */
+    max-height: 80vh;
+    border-radius: 8px;
+    box-shadow: 0 0 50px rgba(255, 255, 255, 0.1);
+    background: black;
+}
+
+/* --- MODAL HEADER & BUTTONS --- */
+.modal-header {
+    width: 80%;
+    display: flex;
+    justify-content: flex-end; /* Posisi di kanan */
+    gap: 15px; /* Jarak antar tombol */
+    margin-bottom: 20px;
+    z-index: 1100;
+}
+
+/* 1. STYLE TOMBOL UMUM */
+.close-btn, .fs-btn {
+    border: none;
+    padding: 12px 25px; 
+    font-size: 16px; 
+    font-weight: bold;
+    border-radius: 50px; 
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5); 
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: transform 0.2s, background-color 0.2s;
+    color: white;
+}
+
+/* 2. KHUSUS TOMBOL TUTUP (MERAH) */
+.close-btn {
+    background: #E50914; 
+}
+.close-btn:hover { background: #ff1f1f; transform: scale(1.05); }
+
+/* 3. KHUSUS TOMBOL FULLSCREEN (BIRU) */
+.fs-btn {
+    background: #0071e3; /* Biru ala Apple/Tech */
+}
+.fs-btn:hover { background: #2998ff; transform: scale(1.05); }
+
+/* --- RESPONSIF HP --- */
+@media (max-width: 768px) {
+    .modal-header, #fullPlayer { width: 95%; }
+    
+    /* Di HP, tombol berjejer atas bawah biar gampang dipencet */
+    .modal-header {
+        flex-direction: column-reverse; /* Tombol tutup paling bawah agar jempol gampang raih */
+        align-items: stretch; /* Lebar tombol mengikuti layar */
+    }
+    .close-btn, .fs-btn { width: 100%; padding: 15px; }
+}
+
+/* Pesan Kosong */
+.empty-msg {
+    text-align: center;
+    color: #777;
+    margin-top: 50px;
+    grid-column: 1 / -1;
+}

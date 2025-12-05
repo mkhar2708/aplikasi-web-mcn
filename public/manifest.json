@@ -1,0 +1,16 @@
+{
+  "name": "Malang City Network",
+  "short_name": "MCN - By Mas Kharisman",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f0f",
+  "theme_color": "#0f0f0f",
+  "orientation": "landscape",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3163/3163508.png", 
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

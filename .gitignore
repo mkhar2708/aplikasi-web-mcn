@@ -1,0 +1,15 @@
+# Dependency Node.js
+node_modules/
+
+# File Database Lokal (Opsional, agar data lokal tidak menimpa data orang lain)
+data.json
+
+# Folder Video (Agar file MP4 berat tidak ikut di-push)
+public/videos/*
+
+# Kecuali file .gitkeep (agar foldernya tetap ada di git walau kosong)
+!public/videos/.gitkeep
+
+# File System
+.DS_Store
+Thumbs.db
