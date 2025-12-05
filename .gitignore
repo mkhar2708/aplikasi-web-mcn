@@ -1,8 +1,7 @@
 # Dependency Node.js
 node_modules/
-
-# File Database Lokal (Opsional, agar data lokal tidak menimpa data orang lain)
 data.json
+.env
 
 # Folder Video (Agar file MP4 berat tidak ikut di-push)
 public/videos/*
