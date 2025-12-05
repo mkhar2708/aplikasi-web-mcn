@@ -26,9 +26,9 @@ Pastikan di komputer Anda sudah terinstall **Node.js**.
    npm install
    ````
 3. **Tambahkan File dibawah ini**
-```bash
-data.json
-```
+   ```bash
+   data.json
+   ```
 
 4. **Jalankan Aplikasi**
    ```bash
