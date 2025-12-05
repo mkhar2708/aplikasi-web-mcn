@@ -2,41 +2,26 @@ const express = require('express');
 const app = express();
 const path = require('path');
 const fs = require('fs');
-// Multer untuk handling file upload
 const multer = require('multer');
-// menambahkan dotenv untuk konfigurasi environment
-require('dotenv').config();
 
-const PORT = process.env.PORT;
+const PORT = 80;
 
-// --- DEFINISI PATH AGAR LEBIH RAPI & AMAN ---
+// --- PATH SETUP ---
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const VIDEO_DIR = path.join(PUBLIC_DIR, 'videos');
 const DB_FILE = path.join(__dirname, 'data.json');
+const SETTINGS_FILE = path.join(__dirname, 'settings.json');
 
-// --- 1. FITUR AUTO FIX (Folder & DB) ---
-// Cek: Apakah folder video sudah ada? Kalau belum, BUAT SEKARANG.
-if (!fs.existsSync(VIDEO_DIR)) {
-    console.log("Folder video belum ada, membuat folder baru...");
-    fs.mkdirSync(VIDEO_DIR, { recursive: true });
-}
+// --- INITIALIZATION ---
+if (!fs.existsSync(VIDEO_DIR)) fs.mkdirSync(VIDEO_DIR, { recursive: true });
+if (!fs.existsSync(DB_FILE)) fs.writeFileSync(DB_FILE, '[]', 'utf-8');
+if (!fs.existsSync(SETTINGS_FILE)) fs.writeFileSync(SETTINGS_FILE, '{"layoutColumns": 3}', 'utf-8');
 
-// Cek: Apakah database data.json sudah ada? Kalau belum, BUAT array kosong.
-if (!fs.existsSync(DB_FILE)) {
-    console.log("Database belum ada, membuat file data.json...");
-    fs.writeFileSync(DB_FILE, '[]', 'utf-8');
-}
-
-// --- 2. Konfigurasi Upload (Multer) ---
+// --- MULTER CONFIG (MULTIPLE FILES SUPPORT) ---
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        // Sekarang aman karena folder sudah pasti dibuat di atas
-        cb(null, VIDEO_DIR); 
-    },
+    destination: (req, file, cb) => cb(null, VIDEO_DIR),
     filename: (req, file, cb) => {
-        // Nama file unik: WaktuSekarang_NamaAsli
-        // .replace(/ /g, '-') mengganti spasi dengan strip agar URL video tidak putus
-        const safeName = file.originalname.replace(/ /g, '-');
+        const safeName = file.originalname.replace(/\s+/g, '-');
         cb(null, Date.now() + '_' + safeName);
     }
 });
@@ -45,102 +30,104 @@ const upload = multer({ storage: storage });
 app.use(express.static(PUBLIC_DIR));
 app.use(express.json());
 
-// --- ROUTING ---
+// --- ROUTES ---
 app.get('/', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
 app.get('/dashboard', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'dashboard.html')));
 
-// --- API: Ambil Data Video ---
+// --- API CRUD ---
+
+// 1. GET ALL
 app.get('/api/videos', (req, res) => {
     try {
-        const data = fs.readFileSync(DB_FILE, 'utf-8');
-        const videos = data ? JSON.parse(data) : [];
-        res.json(videos);
-    } catch (error) {
-        // Jika file rusak/error, kirim array kosong agar web tidak crash
-        console.error("Gagal baca DB:", error);
-        res.json([]);
-    }
+        const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
+        const cleanData = data.map(v => ({ ...v, isVisible: v.isVisible ?? true }));
+        res.json(cleanData);
+    } catch (e) { res.json([]); }
 });
 
-// --- API: Upload Video ---
-app.post('/api/upload', upload.single('videoFile'), (req, res) => {
-    // Jika tidak ada file yang terupload (misal ditolak Multer)
-    if (!req.file) {
-        return res.status(400).json({ status: 'error', message: 'Tidak ada file yang diunggah' });
+// 2. BULK UPLOAD (MENDUKUNG BANYAK FILE)
+// Menggunakan upload.array 'videoFiles' (Perhatikan nama fieldnya ada 's' nya sekarang)
+app.post('/api/upload', upload.array('videoFiles', 50), (req, res) => {
+    if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ status: 'error', message: 'No files' });
     }
 
-    const title = req.body.title || "Tanpa Judul"; 
-    const filename = req.file.filename;
+    const videos = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
+    const uploadedResults = [];
 
-    const newVideo = {
-        id: Date.now(),
-        title: title,
-        file: filename,
-        uploadedAt: new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-    };
+    // Loop semua file yang diupload
+    req.files.forEach(file => {
+        const newVideo = {
+            id: Date.now() + Math.floor(Math.random() * 1000), // ID Unik + Random dikit biar gak bentrok
+            title: file.originalname.replace(/\.[^/.]+$/, ""), // Nama file jadi Judul otomatis (hapus .mp4)
+            file: file.filename,
+            uploadedAt: new Date().toLocaleDateString('id-ID'),
+            isVisible: true
+        };
+        videos.unshift(newVideo); // Masukkan ke urutan atas
+        uploadedResults.push(newVideo);
+    });
 
-    // Proses Simpan ke Database
-    try {
-        let videos = [];
-        // Baca data lama dulu
-        const fileContent = fs.readFileSync(DB_FILE, 'utf-8');
-        videos = JSON.parse(fileContent);
-
-        // Tambah data baru ke urutan pertama (unshift) supaya muncul paling atas
-        videos.unshift(newVideo);
-
-        // Tulis ulang file
-        fs.writeFileSync(DB_FILE, JSON.stringify(videos, null, 2));
-
-        console.log(`Berhasil upload: ${title} (${filename})`);
-        res.json({ status: 'success', message: 'Video berhasil disimpan', data: newVideo });
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ status: 'error', message: 'Gagal menyimpan data ke database' });
-    }
+    fs.writeFileSync(DB_FILE, JSON.stringify(videos, null, 2));
+    res.json({ status: 'success', count: uploadedResults.length });
 });
 
-// ... (Kode sebelumnya)
-
-// --- API: HAPUS VIDEO ---
-app.delete('/api/videos/:id', (req, res) => {
+// 3. EDIT JUDUL (UPDATE)
+app.put('/api/videos/:id', (req, res) => {
     const id = parseInt(req.params.id);
-
-    try {
-        const fileContent = fs.readFileSync(DB_FILE, 'utf-8');
-        let videos = JSON.parse(fileContent);
-
-        // Cari data video yang mau dihapus
-        const targetIndex = videos.findIndex(v => v.id === id);
-        
-        if (targetIndex === -1) {
-            return res.status(404).json({ message: "Video tidak ditemukan" });
-        }
-
-        const videoToDelete = videos[targetIndex];
-
-        // 1. Hapus File Fisik di folder 'public/videos'
-        const filePath = path.join(VIDEO_DIR, videoToDelete.file);
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath); // Hapus file dari harddisk
-            console.log(`File dihapus: ${videoToDelete.file}`);
-        }
-
-        // 2. Hapus dari Database JSON
-        videos.splice(targetIndex, 1);
+    const { title } = req.body;
+    let videos = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
+    
+    const idx = videos.findIndex(v => v.id === id);
+    if(idx !== -1) {
+        videos[idx].title = title;
         fs.writeFileSync(DB_FILE, JSON.stringify(videos, null, 2));
-
-        res.json({ status: 'success', message: 'Video berhasil dihapus' });
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ status: 'error', message: 'Gagal menghapus video' });
+        res.json({ status: 'success', data: videos[idx] });
+    } else {
+        res.status(404).json({ error: "Not found" });
     }
 });
 
-// Jalankan Server
-// 0.0.0.0 artinya: Dengarkan permintaan dari manapun (bukan cuma localhost)
+// 4. BULK DELETE & TOGGLE (FITUR BARU)
+app.post('/api/videos/bulk-action', (req, res) => {
+    const { ids, action } = req.body; // action: 'delete' | 'hide' | 'show'
+    let videos = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
+    
+    if (action === 'delete') {
+        // Hapus File Fisik Dulu
+        ids.forEach(id => {
+            const vid = videos.find(v => v.id === id);
+            if(vid) {
+                const p = path.join(VIDEO_DIR, vid.file);
+                if(fs.existsSync(p)) fs.unlinkSync(p);
+            }
+        });
+        // Filter array, buang yang id-nya ada di list hapus
+        videos = videos.filter(v => !ids.includes(v.id));
+    } 
+    else if (action === 'hide' || action === 'show') {
+        videos = videos.map(v => {
+            if (ids.includes(v.id)) {
+                v.isVisible = (action === 'show');
+            }
+            return v;
+        });
+    }
+
+    fs.writeFileSync(DB_FILE, JSON.stringify(videos, null, 2));
+    res.json({ status: 'success' });
+});
+
+// 5. SETTINGS
+app.get('/api/settings', (req, res) => {
+    res.json(JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8')));
+});
+app.post('/api/settings', (req, res) => {
+    const s = { layoutColumns: parseInt(req.body.layoutColumns) || 3 };
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(s, null, 2));
+    res.json({ status: 'success' });
+});
+
 app.listen(PORT, '0.0.0.0', () => {
     const { networkInterfaces } = require('os');
     const nets = networkInterfaces();
@@ -159,6 +146,7 @@ app.listen(PORT, '0.0.0.0', () => {
     }
 
     console.log(`\n==================================================`);
+    console.log(`         Creator By Mas Kharisman\n`);
     console.log(`✅ SERVER ONLINE DI PORT: ${PORT}`);
     console.log(`🏠 Akses di Laptop:   http://localhost:${PORT}`);
     console.log(`==================================================`);
