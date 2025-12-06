@@ -6,7 +6,7 @@
 
 Sangat cocok untuk: Pameran, Ruang Tunggu, Kiosk Digital, atau Server Multimedia Rumahan.
 
-![MyStream Preview](https://via.placeholder.com/800x400?text=Dashboard+Preview)
+![MCN Preview](https://via.placeholder.com/800x400?text=Dashboard+Preview)
 
 ## ✨ Fitur Unggulan
 
