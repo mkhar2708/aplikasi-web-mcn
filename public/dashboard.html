@@ -3,73 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard V2</title>
+    <title>Admin Dashboard Fix</title>
+    <!-- CSS Global -->
     <link rel="stylesheet" href="assets/css/style.css"> 
+    <!-- CSS Dashboard (Wajib ditaruh dibawah style.css) -->
     <link rel="stylesheet" href="assets/css/dashboard.css">
 </head>
 <body>
+    <!-- Hidden input -->
+    <input type="file" id="replaceInput" style="display:none;" accept="video/*">
 
     <div class="container">
         
+        <!-- HEADER -->
         <div class="header-dash">
-            <h1>Admin Panel</h1>
-            <a href="/" class="btn-dash" style="background:#333;">Lihat Website →</a>
+            <h1>Admin Content</h1>
+            <a href="/" class="btn-dash" style="background:#333; color:white;">Lihat Website →</a>
         </div>
         
-        <!-- SETTINGS BOX -->
-        <div class="settings-box">
-            <div>
-                <strong>Tampilan Layout Grid</strong><br>
-                <small>Jumlah kolom pada Desktop</small>
+        <!-- TOOLBAR -->
+        <div class="toolbar-container">
+            <!-- 1. Pencarian -->
+            <div class="tool-item" style="flex-grow: 2;">
+                <strong>Pencarian:</strong>
+                <input type="text" id="searchBox" onkeyup="applyFilters()" placeholder="Cari judul video..." style="margin-top:5px;">
             </div>
-            <div class="control-group">
-                <select id="colLayout">
-                    <option value="3">3 Kolom</option>
-                    <option value="4">4 Kolom</option>
-                    <option value="5">5 Kolom</option>
+            
+            <!-- 2. View Mode -->
+            <div class="tool-item center-align">
+                <strong>Tampilan:</strong>
+                <div class="view-switcher" style="margin-top:5px;">
+                    <button class="view-btn active" id="btnListView" onclick="switchView('list')" title="List">☰</button>
+                    <button class="view-btn" id="btnGridView" onclick="switchView('grid')" title="Grid">⛶</button>
+                </div>
+            </div>
+            
+            <!-- 3. Sortir -->
+            <div class="tool-item">
+                <strong>Urutan:</strong>
+                <select id="sortSelect" onchange="applyFilters()" style="margin-top:5px;">
+                    <option value="custom">Manual (Drag & Drop)</option>
+                    <option value="az">Judul A-Z</option>
+                    <option value="newest">Terbaru Upload</option>
+                    <option value="modified">Terakhir Diedit</option>
                 </select>
-                <button onclick="saveSettings()" class="btn-blue">Simpan Layout</button>
+            </div>
+
+            <!-- 4. Tombol Upload -->
+            <div class="tool-item" style="display: flex; align-items: flex-end;">
+                 <button onclick="toggleUploadBox()" class="btn-blue" style="margin-top:5px; height: 38px;">+ Upload Video</button>
             </div>
         </div>
 
-        <!-- UPLOAD FORM MULTIPLE -->
-        <div class="upload-box">
-            <h3>Upload Banyak Video Sekaligus</h3>
-            <p style="font-size:0.9em; color:#666;">Nama file akan otomatis menjadi Judul Video. Anda bisa mengeditnya nanti.</p>
+        <!-- UPLOAD FORM (Disembunyikan diawal) -->
+        <div id="uploadContainer" class="upload-box" style="display:none;">
+            <h3>Upload Video Baru</h3>
+            <p style="margin-bottom:15px; color:#666;">Bisa pilih banyak file sekaligus.</p>
             <form id="uploadForm">
-                <!-- NOTE: 'multiple' attribute allows selecting many files -->
                 <input type="file" name="videoFiles" id="fileInput" class="upload-input" accept="video/*" multiple required>
-                <button type="submit" class="btn-save">Mulai Upload Semua</button>
+                <div style="display:flex; gap:10px;">
+                    <button type="submit" class="btn-save">Mulai Upload</button>
+                    <button type="button" class="btn-del" onclick="toggleUploadBox()">Batal</button>
+                </div>
             </form>
-            <p id="statusMsg" style="margin-top:10px; font-weight:bold;"></p>
+            <p id="uploadStatus"></p>
         </div>
 
-        <!-- LIST VIDEO -->
-        <h3>Database Video</h3>
-        <table id="mainTable">
-            <thead>
-                <tr>
-                    <th class="col-check">
-                        <input type="checkbox" id="checkAll" onclick="toggleAllChecks()">
-                    </th>
-                    <th>Judul & Info File</th>
-                    <th style="text-align:center;">Status</th>
-                    <th style="text-align:center;">Edit / Hapus</th>
-                </tr>
-            </thead>
-            <tbody id="videoList"></tbody>
-        </table>
+        <!-- KONTAINER DATA (Penting: Jangan sampai hilang saat copy paste) -->
+        
+        <!-- View Table (List) -->
+        <div id="listViewContainer">
+            <table id="mainTable">
+                <thead>
+                    <tr>
+                        <th style="width: 40px; text-align:center;"><input type="checkbox" id="checkAll" onclick="toggleAllChecks()"></th>
+                        <th style="width: 40px;">Move</th>
+                        <th style="width: 80px;">Preview</th>
+                        <th>Info Video</th>
+                        <th style="width: 100px; text-align:center;">Status</th>
+                        <th style="width: 100px; text-align:center;">Aksi</th>
+                    </tr>
+                </thead>
+                <!-- Body Tabel akan diisi oleh JS -->
+                <tbody id="videoListBody">
+                    <tr><td colspan="6" style="text-align:center; padding:20px;">Memuat data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- View Grid (Thumbnail) -->
+        <div id="gridViewContainer" style="display:none;">
+            <div class="admin-grid" id="videoGridBody"></div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer-info">
+            <span style="font-size:12px; color:gray;">Tips: Tahan & Geser baris/kartu untuk mengubah urutan.</span>
+            <span style="font-size:12px; color:gray;">Total: <span id="totalCount">0</span> Video</span>
+        </div>
+
     </div>
 
-    <!-- BULK ACTIONS TOOLBAR (Floating) -->
+    <!-- PENGATURAN HALAMAN DEPAN -->
+    <div class="container" style="margin-top:20px;">
+        <h3>Pengaturan Home</h3>
+        <div style="display:flex; align-items:center; gap:15px;">
+            <span>Kolom Grid:</span>
+            <select id="colLayout" style="width: 150px;">
+                <option value="3">3 Kolom</option>
+                <option value="4">4 Kolom</option>
+                <option value="5">5 Kolom</option>
+            </select>
+            <button onclick="saveLayoutSetting()" class="btn-blue" style="width: auto;">Simpan Layout</button>
+        </div>
+    </div>
+
+    <!-- BULK ACTIONS FLOATING -->
     <div id="bulkToolbar">
-        <span id="selectedCount">0 Dipilih</span>
-        <button onclick="bulkAction('show')" class="bulk-btn bulk-show">👁 Tayangkan</button>
-        <button onclick="bulkAction('hide')" class="bulk-btn bulk-hide">🚫 Sembunyikan</button>
-        <button onclick="bulkAction('delete')" class="bulk-btn bulk-del">🗑 Hapus</button>
+        <span id="selectLabel">0 Dipilih</span>
+        <div style="display:flex; gap:5px;">
+            <button onclick="runBulk('show')" class="bulk-btn bulk-show">Tayang</button>
+            <button onclick="runBulk('hide')" class="bulk-btn bulk-hide">Hide</button>
+            <button onclick="runBulk('delete')" class="bulk-btn bulk-del">Hapus</button>
+        </div>
     </div>
 
+    <!-- JS -->
     <script src="assets/js/dashboard.js"></script>
-
 </body>
 </html>

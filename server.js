@@ -6,21 +6,22 @@ const multer = require('multer');
 
 const PORT = 80;
 
-// --- PATH SETUP ---
+// --- KONFIGURASI PATH ---
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const VIDEO_DIR = path.join(PUBLIC_DIR, 'videos');
 const DB_FILE = path.join(__dirname, 'data.json');
 const SETTINGS_FILE = path.join(__dirname, 'settings.json');
 
-// --- INITIALIZATION ---
+// --- INITIAL SETUP (Buat file jika belum ada) ---
 if (!fs.existsSync(VIDEO_DIR)) fs.mkdirSync(VIDEO_DIR, { recursive: true });
 if (!fs.existsSync(DB_FILE)) fs.writeFileSync(DB_FILE, '[]', 'utf-8');
 if (!fs.existsSync(SETTINGS_FILE)) fs.writeFileSync(SETTINGS_FILE, '{"layoutColumns": 3}', 'utf-8');
 
-// --- MULTER CONFIG (MULTIPLE FILES SUPPORT) ---
+// --- MULTER (Untuk Upload) ---
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, VIDEO_DIR),
     filename: (req, file, cb) => {
+        // Bersihkan nama file dari spasi
         const safeName = file.originalname.replace(/\s+/g, '-');
         cb(null, Date.now() + '_' + safeName);
     }
@@ -30,101 +31,140 @@ const upload = multer({ storage: storage });
 app.use(express.static(PUBLIC_DIR));
 app.use(express.json());
 
-// --- ROUTES ---
+// --- ROUTES HALAMAN ---
 app.get('/', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
 app.get('/dashboard', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'dashboard.html')));
 
-// --- API CRUD ---
+// --- DATABASE UTILS ---
+function loadDB() {
+    let videos = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
+    // Migrasi data agar memiliki field baru
+    return videos.map((v, i) => ({
+        ...v,
+        order: v.order !== undefined ? v.order : i, // Jika tidak ada urutan, pakai index
+        isVisible: v.isVisible !== undefined ? v.isVisible : true,
+        lastModified: v.lastModified || v.uploadedAt
+    })).sort((a, b) => a.order - b.order); // Selalu urutkan berdasarkan order
+}
 
-// 1. GET ALL
-app.get('/api/videos', (req, res) => {
-    try {
-        const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
-        const cleanData = data.map(v => ({ ...v, isVisible: v.isVisible ?? true }));
-        res.json(cleanData);
-    } catch (e) { res.json([]); }
-});
+function saveDB(data) {
+    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+}
 
-// 2. BULK UPLOAD (MENDUKUNG BANYAK FILE)
-// Menggunakan upload.array 'videoFiles' (Perhatikan nama fieldnya ada 's' nya sekarang)
+// --- API ENDPOINTS ---
+
+// 1. Ambil Data Video
+app.get('/api/videos', (req, res) => res.json(loadDB()));
+
+// 2. Upload Video Baru (Multiple)
 app.post('/api/upload', upload.array('videoFiles', 50), (req, res) => {
-    if (!req.files || req.files.length === 0) {
-        return res.status(400).json({ status: 'error', message: 'No files' });
+    let videos = loadDB();
+    const maxOrder = videos.length > 0 ? Math.max(...videos.map(v => v.order)) : -1;
+    
+    if (req.files) {
+        req.files.forEach((file, i) => {
+            const now = new Date().toLocaleString('id-ID');
+            videos.unshift({
+                id: Date.now() + Math.floor(Math.random() * 10000),
+                title: file.originalname.replace(/\.[^/.]+$/, ""),
+                file: file.filename,
+                uploadedAt: now,
+                lastModified: now,
+                isVisible: true,
+                order: maxOrder + i + 1 // Urutan paling bawah
+            });
+        });
+        // Reset ulang urutan 0,1,2 agar rapi
+        videos.forEach((v, i) => v.order = i);
+        saveDB(videos);
     }
-
-    const videos = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
-    const uploadedResults = [];
-
-    // Loop semua file yang diupload
-    req.files.forEach(file => {
-        const newVideo = {
-            id: Date.now() + Math.floor(Math.random() * 1000), // ID Unik + Random dikit biar gak bentrok
-            title: file.originalname.replace(/\.[^/.]+$/, ""), // Nama file jadi Judul otomatis (hapus .mp4)
-            file: file.filename,
-            uploadedAt: new Date().toLocaleDateString('id-ID'),
-            isVisible: true
-        };
-        videos.unshift(newVideo); // Masukkan ke urutan atas
-        uploadedResults.push(newVideo);
-    });
-
-    fs.writeFileSync(DB_FILE, JSON.stringify(videos, null, 2));
-    res.json({ status: 'success', count: uploadedResults.length });
+    res.json({ status: 'success', count: req.files ? req.files.length : 0 });
 });
 
-// 3. EDIT JUDUL (UPDATE)
+// 3. Ganti File Video (Replace)
+app.post('/api/videos/:id/replace', upload.single('videoFile'), (req, res) => {
+    const id = parseInt(req.params.id);
+    let videos = loadDB();
+    const idx = videos.findIndex(v => v.id === id);
+
+    if (idx !== -1 && req.file) {
+        // Hapus fisik lama
+        const oldPath = path.join(VIDEO_DIR, videos[idx].file);
+        if(fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+        
+        // Update DB
+        videos[idx].file = req.file.filename;
+        videos[idx].lastModified = new Date().toLocaleString('id-ID');
+        saveDB(videos);
+        res.json({ status: 'success' });
+    } else {
+        res.status(400).json({ error: "Gagal replace" });
+    }
+});
+
+// 4. Update Info / Reorder (Pindah Urutan)
 app.put('/api/videos/:id', (req, res) => {
     const id = parseInt(req.params.id);
-    const { title } = req.body;
-    let videos = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
-    
+    const { title, order } = req.body;
+    let videos = loadDB();
     const idx = videos.findIndex(v => v.id === id);
-    if(idx !== -1) {
-        videos[idx].title = title;
-        fs.writeFileSync(DB_FILE, JSON.stringify(videos, null, 2));
-        res.json({ status: 'success', data: videos[idx] });
+
+    if (idx !== -1) {
+        if(title) {
+            videos[idx].title = title;
+            videos[idx].lastModified = new Date().toLocaleString('id-ID');
+        }
+        
+        if(order !== undefined) {
+            // Pindah posisi array
+            const item = videos[idx];
+            videos.splice(idx, 1);       // Cabut dari posisi lama
+            videos.splice(order, 0, item); // Masukkan ke posisi baru
+            
+            // Rapikan index order lagi
+            videos.forEach((v, i) => v.order = i);
+        }
+        
+        saveDB(videos);
+        res.json({ status: 'success' });
     } else {
         res.status(404).json({ error: "Not found" });
     }
 });
 
-// 4. BULK DELETE & TOGGLE (FITUR BARU)
+// 5. Bulk Actions (Hapus Massal / Status Massal)
 app.post('/api/videos/bulk-action', (req, res) => {
-    const { ids, action } = req.body; // action: 'delete' | 'hide' | 'show'
-    let videos = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
-    
+    const { ids, action } = req.body;
+    let videos = loadDB();
+
     if (action === 'delete') {
-        // Hapus File Fisik Dulu
         ids.forEach(id => {
-            const vid = videos.find(v => v.id === id);
-            if(vid) {
-                const p = path.join(VIDEO_DIR, vid.file);
+            const v = videos.find(vid => vid.id === id);
+            if(v) {
+                const p = path.join(VIDEO_DIR, v.file);
                 if(fs.existsSync(p)) fs.unlinkSync(p);
             }
         });
-        // Filter array, buang yang id-nya ada di list hapus
         videos = videos.filter(v => !ids.includes(v.id));
+        // Rapikan order
+        videos.forEach((v, i) => v.order = i);
     } 
     else if (action === 'hide' || action === 'show') {
-        videos = videos.map(v => {
+        videos.forEach(v => {
             if (ids.includes(v.id)) {
                 v.isVisible = (action === 'show');
             }
-            return v;
         });
     }
 
-    fs.writeFileSync(DB_FILE, JSON.stringify(videos, null, 2));
+    saveDB(videos);
     res.json({ status: 'success' });
 });
 
-// 5. SETTINGS
-app.get('/api/settings', (req, res) => {
-    res.json(JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8')));
-});
+// 6. Settings
+app.get('/api/settings', (req, res) => res.json(JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8'))));
 app.post('/api/settings', (req, res) => {
-    const s = { layoutColumns: parseInt(req.body.layoutColumns) || 3 };
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(s, null, 2));
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(req.body));
     res.json({ status: 'success' });
 });
 

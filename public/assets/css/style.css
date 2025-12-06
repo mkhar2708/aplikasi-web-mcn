@@ -1,128 +1,46 @@
-/* --- 1. RESET & VARIABLE --- */
 :root {
-    --bg-color: #0f0f0f;
-    --text-color: #ffffff;
-    --card-bg: #1e1e1e;
-    --primary-color: #0071e3;
-    --danger-color: #E50914;
-    --col-count: 3; /* Variable ini nanti diubah oleh Javascript */
+    --col-count: 3; /* Dinamis */
+    --primary: #0071e3;
+    --dark: #0f0f0f;
+    --card: #1e1e1e;
 }
 
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    margin: 0;
-    padding: 20px;
-}
+body { font-family: sans-serif; background: var(--dark); color: white; margin:0; padding:20px; }
 
-/* --- 2. HEADER & TOMBOL UMUM --- */
-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 30px;
-}
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+.logo { font-size: 22px; font-weight: bold; letter-spacing: 1px;}
+.btn-dash { background: #333; color: white; padding: 8px 12px; border-radius: 5px; text-decoration: none; font-size: 14px; border:none; cursor: pointer;}
+.btn-dash:hover { background: #555; }
 
-.logo { font-size: 24px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
-
-.btn-dash {
-    text-decoration: none;
-    padding: 10px 15px;
-    border-radius: 6px;
-    font-weight: 600;
-    font-size: 14px;
-    transition: 0.2s;
-    color: white;
-    background: #333;
-    border: none;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
-.btn-dash:hover { filter: brightness(1.2); }
-
-/* --- 3. GRID SYSTEM (DYNAMIC LAYOUT) --- */
+/* Grid Layout Dinamis */
 .video-grid {
-    display: grid;
-    gap: 20px;
-    grid-template-columns: 1fr; /* Default Mobile (1 Kolom) */
+    display: grid; gap: 20px;
+    grid-template-columns: 1fr; /* Default HP */
 }
-
-/* Logic PC/Landscape: Menggunakan variable --col-count */
+/* Hanya jadi banyak kolom kalau layar lebar (HP Landscape / PC) */
 @media (min-width: 600px), (orientation: landscape) {
     .video-grid {
         grid-template-columns: repeat(var(--col-count), 1fr);
     }
 }
 
-/* --- 4. KARTU VIDEO --- */
-.video-card {
-    background: var(--card-bg);
-    border-radius: 10px;
-    overflow: hidden;
-    cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-    position: relative;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+.video-card { background: var(--card); border-radius: 8px; overflow: hidden; transition: transform 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.4); cursor: pointer;}
+.video-card:hover { transform: scale(1.03); z-index: 2; box-shadow: 0 5px 20px rgba(0,0,0,0.8);}
+
+.video-wrapper { position: relative; padding-top: 56.25%; background: black; }
+.video-wrapper video { position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; }
+
+.video-info { padding: 10px; }
+.video-title { font-weight: bold; margin-bottom: 5px; }
+.video-meta { font-size: 11px; color: #aaa; }
+
+/* Modal */
+#videoModal { 
+    display: none; position: fixed; top:0; left:0; width:100%; height:100%; 
+    background: rgba(0,0,0,0.95); z-index: 1000; justify-content:center; align-items:center; flex-direction: column;
 }
-
-.video-card:hover {
-    transform: scale(1.03);
-    z-index: 5;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.6);
-}
-
-/* Aspek Rasio 16:9 */
-.video-wrapper {
-    position: relative;
-    width: 100%;
-    padding-top: 56.25%;
-    background: #000;
-}
-
-.video-wrapper video {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    object-fit: cover;
-}
-
-.video-info { padding: 12px; }
-.video-title { font-weight: 600; margin-bottom: 5px; font-size: 1em; }
-.video-meta { font-size: 0.85em; color: #aaa; }
-
-/* --- 5. MODAL PLAYER (POPUP) --- */
-#videoModal {
-    display: none;
-    position: fixed; top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.95);
-    z-index: 2000;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-}
-
-.modal-header {
-    width: 90%; max-width: 1200px;
-    display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 15px;
-}
-
-.fs-btn { background: var(--primary-color); }
-.close-btn { background: var(--danger-color); }
-
-.fs-btn, .close-btn {
-    border: none; color: white; padding: 10px 20px;
-    border-radius: 50px; font-weight: bold; cursor: pointer;
-    box-shadow: 0 0 10px rgba(0,0,0,0.5);
-}
-
-#fullPlayer {
-    width: 90%; max-width: 1200px; max-height: 80vh;
-    border-radius: 10px; background: black; box-shadow: 0 0 30px rgba(255,255,255,0.1);
-}
-
-/* Utility */
-.empty-msg { text-align: center; color: #777; grid-column: 1 / -1; margin-top: 50px; }
+.modal-header { width: 90%; max-width: 1000px; display:flex; justify-content: flex-end; gap: 10px; margin-bottom: 10px;}
+#fullPlayer { width: 90%; max-width: 1000px; max-height: 80vh; background: black; }
+.close-btn, .fs-btn { border:none; padding:10px 20px; border-radius:50px; cursor:pointer; font-weight: bold; color:white; }
+.close-btn { background: #E50914; }
+.fs-btn { background: var(--primary); }

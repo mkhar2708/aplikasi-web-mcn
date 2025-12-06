@@ -3,50 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#0f0f0f">
-    <!-- Khusus iPhone/iPad -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-
-    <title>Project Khar DevOps</title>
-    
-    <!-- PERUBAHAN DI SINI: Link ke CSS -->
-    <link rel="stylesheet" href="assets/css/style.css"> 
+    <title>MCN - By Khar DevOps</title>
+    <!-- MANIFEST PWA (Opsi Tambahan) -->
     <link rel="manifest" href="manifest.json">
+    
+    <link rel="stylesheet" href="assets/css/style.css"> 
 </head>
 <body>
 
-<header>
-        <div class="logo">Malang City Network</div>
-        <div style="display: flex; gap: 10px;">
-            <!-- Tombol Dashboard -->
-            <a href="/dashboard" class="btn-dash" style="background: #333;">⚙ Admin</a>
+    <header>
+        <div class="logo">MALANG CITY NETWORK</div>
+        <div class="menu-grp" style="display:flex; gap:10px;">
+            <!-- Tombol Refresh -->
+            <button onclick="refreshData()" class="btn-dash" title="Segarkan" style="background:#444;">↻ Segarkan</button>
             
-            <!-- TOMBOL WEBSITE FULLSCREEN -->
-            <button onclick="toggleAppFullscreen()" class="btn-dash" style="cursor: pointer; border: none;">
-                ⛶ Layar Penuh
-            </button>
+            <a href="/dashboard" class="btn-dash">⚙ Admin</a>
+            <button onclick="toggleAppFullscreen()" class="btn-dash" style="background:transparent; border:1px solid #555;">⛶ Fullscreen</button>
         </div>
     </header>
 
     <div class="video-grid" id="gridContainer">
-        <p style="text-align: center; color: #888;">Memuat data video...</p>
+        <!-- Javascript akan mengisi ini -->
+        <p style="text-align: center; color:#666; margin-top:50px;">Memuat...</p>
     </div>
 
-    <!-- Modal Full Player -->
+    <!-- PLAYER FULLSCREEN -->
     <div id="videoModal">
         <div class="modal-header">
-            <!-- Kita bungkus tombol supaya rapi -->
-            <button class="fs-btn" onclick="toggleVideoFullscreen()">⛶ Full Screen</button>
-            <button class="close-btn" onclick="closeModal()">✕ Tutup Player</button>
+            <button class="fs-btn" onclick="toggleVideoFullscreen()">⛶ Layar Video</button>
+            <button class="close-btn" onclick="closeModal()">✕ Tutup</button>
         </div>
-        <video id="fullPlayer" controls playsinline>
+        <!-- Anti Download Attributes Added -->
+        <video id="fullPlayer" controls playsinline controlsList="nodownload" oncontextmenu="return false;">
             <source src="" type="video/mp4">
-            Browser Anda tidak mendukung video HTML5.
         </video>
     </div>
 
-    <!-- PERUBAHAN DI SINI: Link ke Javascript -->
     <script src="assets/js/script.js"></script>
-
 </body>
 </html>
