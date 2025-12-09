@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 
-const PORT = 80;
+const PORT = 3030;
 
 // --- KONFIGURASI PATH ---
 const PUBLIC_DIR = path.join(__dirname, 'public');
